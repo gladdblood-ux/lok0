@@ -153,7 +153,7 @@
             align-self: flex-end; background: #00a173; color: #fff; border: none;
             padding: 6px 16px; border-radius: 100px; font-size: 13px; font-weight: 500; cursor: pointer;
         }
-        .comments-list { display: flex; flex-direction: column; gap: 16px; }
+        .comments-list { display: flex; flex-direction: column; gap: 16px; margin-top: 15px; }
         .single-comment { display: flex; gap: 12px; background: rgba(255,255,255,0.02); padding: 10px; border-radius: 12px; }
         .comment-meta { display: flex; flex-direction: column; flex: 1; }
         .comment-author-name { font-size: 13px; font-weight: 500; color: #fff; margin-bottom: 2px; }
@@ -165,7 +165,13 @@
             width: 110px; height: 110px; border-radius: 50%; object-fit: cover;
             background: #303134; border: 3px solid #00a173; margin: 0 auto 12px auto; display: block;
         }
-        .profile-username-display { font-size: 20px; font-weight: 500; color: #fff; margin-bottom: 30px; }
+        .profile-input-group { max-width: 280px; margin: 0 auto 20px auto; text-align: left;}
+        .profile-input-group label { display: block; font-size: 12px; color: #9aa0a6; margin-bottom: 4px;}
+        .profile-input-group input { width: 100%; background: #202124; border: 1px solid #5f6368; padding: 10px; border-radius: 8px; color: #fff; box-sizing: border-box; }
+        .profile-save-btn {
+            background: #00a173; color: #fff; width: 100%; max-width: 260px; padding: 12px;
+            border: none; border-radius: 100px; font-size: 15px; font-weight: 500; cursor: pointer; margin-top: 20px;
+        }
         .danger-logout-btn {
             background: transparent; color: #ea4335; font-size: 13px; border: 1px solid #ea4335;
             padding: 8px 16px; border-radius: 100px; cursor: pointer; display: inline-block; margin-top: 40px;
@@ -274,11 +280,11 @@
                     <div class="app-title">PBA2K26 Updated Import</div>
                     <div class="app-rating">4.5★ • 88 MB</div>
                 </div>
-                <!-- Card 6 -->
+                <!-- Bagong Card 6 -->
                 <div class="app-card" data-id="6" data-title="pba2k16 2k20 mobile sports basketball" data-category="games" onclick="openDetailsPage(6)">
                     <img class="app-thumbnail" src="https://i.ibb.co/tPbQx4cP/image.png">
                     <div class="app-title">PBA2K16 ( 2K20 )</div>
-                    <div class="app-rating">4.8★ • 1.5 GB</div>
+                    <div class="app-rating">4.8★ • TBD</div>
                 </div>
             </div>
         </div>
@@ -333,16 +339,4 @@
                         <div class="comment-field-wrapper">
                             <textarea id="comment-text-input" rows="2" placeholder="Describe your experience..."></textarea>
                             <button class="btn-comment-submit" onclick="submitComment()">Post</button>
-                        </div>
-                    </div>
-                    <div class="comments-list" id="comments-target-container">
-                        <!-- Dynamic comments will be injected here -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- PROFILE INTERFACE LAYER -->
-        <div id="profile-view-layer" class="hidden">
-            <img class="profile-setup-avatar" src="https://www.w3schools.com/howto/img_avatar.png">
-            <div class="profile-username-display" id="profile-name-label">U
+                        </d
