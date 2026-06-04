@@ -165,14 +165,7 @@
             width: 110px; height: 110px; border-radius: 50%; object-fit: cover;
             background: #303134; border: 3px solid #00a173; margin: 0 auto 12px auto; display: block;
         }
-        .upload-trigger-btn {
-            background: #303134; color: #8ab4f8; font-size: 13px; padding: 6px 14px;
-            border-radius: 100px; display: inline-block; cursor: pointer; margin-bottom: 30px; border: 1px solid #5f6368;
-        }
-        .profile-save-btn {
-            background: #00a173; color: #fff; width: 100%; max-width: 260px; padding: 12px;
-            border: none; border-radius: 100px; font-size: 15px; font-weight: 500; cursor: pointer; margin-top: 20px;
-        }
+        .profile-username-display { font-size: 20px; font-weight: 500; color: #fff; margin-bottom: 30px; }
         .danger-logout-btn {
             background: transparent; color: #ea4335; font-size: 13px; border: 1px solid #ea4335;
             padding: 8px 16px; border-radius: 100px; cursor: pointer; display: inline-block; margin-top: 40px;
@@ -281,18 +274,17 @@
                     <div class="app-title">PBA2K26 Updated Import</div>
                     <div class="app-rating">4.5★ • 88 MB</div>
                 </div>
-                <!-- Bagong Card 6 (PBA2K16 2K20) -->
+                <!-- Card 6 -->
                 <div class="app-card" data-id="6" data-title="pba2k16 2k20 mobile sports basketball" data-category="games" onclick="openDetailsPage(6)">
                     <img class="app-thumbnail" src="https://i.ibb.co/tPbQx4cP/image.png">
                     <div class="app-title">PBA2K16 ( 2K20 )</div>
-                    <div class="app-rating">4.8★ • TBD</div>
+                    <div class="app-rating">4.8★ • 1.5 GB</div>
                 </div>
             </div>
         </div>
 
         <!-- DETAILS SCREEN LAYER -->
         <div id="details-content" class="hidden">
-            <!-- PlayStore Video Header Player -->
             <div class="video-container">
                 <iframe id="target-youtube-iframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             </div>
@@ -343,4 +335,14 @@
                             <button class="btn-comment-submit" onclick="submitComment()">Post</button>
                         </div>
                     </div>
-                    <!-- Target Container for u
+                    <div class="comments-list" id="comments-target-container">
+                        <!-- Dynamic comments will be injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROFILE INTERFACE LAYER -->
+        <div id="profile-view-layer" class="hidden">
+            <img class="profile-setup-avatar" src="https://www.w3schools.com/howto/img_avatar.png">
+            <div class="profile-username-display" id="profile-name-label">U
