@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LokoStore - Find Your Next Game</title>
+    <style>
+        /* Premium PlayStore Theme Core */
+        body { 
+            background-color: #121212; 
+            color: #e3e3e3; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0; 
+            padding-bottom: 40px;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Minimalist Spinner */
+        #loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #121212; display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; z-index: 10000; 
+            opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+        }
+        #loading-overlay.active { opacity: 1; pointer-events: auto; }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid rgba(0, 161, 115, 0.1);
+            border-top-color: #00a173;
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* GOOGLE STYLE AUTHENTICATION CONTAINER */
+        #auth-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #121212; display: flex; justify-content: center; align-items: center; z-index: 9990; padding: 20px; box-sizing: border-box;
+        }
+        .auth-box { 
+            background: #1e1e1e; padding: 40px 24px; border-radius: 28px; width: 100%; max-width: 340px; 
+            text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.4); box-sizing: border-box;
+        }
+        .play-logo-icon { width: 50px; height: 50px; margin: 0 auto 16px auto; }
+        .auth-title { font-size: 24px; font-weight: 500; color: #fff; margin-bottom: 8px; }
+        .auth-subtitle { font-size: 14px; color: #9aa0a6; margin-bottom: 30px; }
+        .input-group { margin-bottom: 20px; }
+        .input-group input {
+            width: 100%; background: transparent; border: 1px solid #5f6368; padding: 14px 16px; 
+            border-radius: 8px; color: #fff; font-size: 16px; box-sizing: border-box; outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-group input:focus { border-color: #8ab4f8; }
+        .btn-auth { 
+            width: 100%; background: #00a173; color: #fff; font-weight: 500; 
+            padding: 12px; border: none; border-radius: 100px; font-size: 14px;
+            cursor: pointer; margin-top: 15px;
+        }
+        .auth-toggle { font-size: 14px; color: #8ab4f8; margin-top: 24px; cursor: pointer; display: inline-block; }
+
+        /* REAL PLAYSTORE INTERFACE PACK */
+        .store-header {
+            background: #1e1e1e; padding: 12px 16px; position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px;
+        }
+        .back-btn {
+            background: transparent; border: none; color: #fff; font-size: 20px; cursor: pointer; padding: 4px 8px; display: none;
+        }
+        .search-bar-wrapper {
+            background: #303134; border-radius: 28px; padding: 10px 14px;
+            display: flex; align-items: center; flex: 1;
+        }
+        .search-bar-wrapper input {
+            background: transparent; border: none; color: #e8eaed; font-size: 15px; width: 100%; outline: none; margin-left: 8px;
+        }
+        
+        /* Header Profile Circle Trigger */
+        .header-avatar {
+            width: 34px; height: 34px; border-radius: 50%; object-fit: cover;
+            background: #5f6368; border: 2px solid #00a173; cursor: pointer;
+        }
+
+        .category-slider { display: flex; gap: 8px; padding: 14px 16px 4px 16px; overflow-x: auto; }
+        .category-slider::-webkit-scrollbar { display: none; }
+        .chip {
+            background: transparent; color: #9aa0a6; padding: 6px 16px; border-radius: 100px;
+            font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid #5f6368;
+        }
+        .chip.active { background: #e6f4ea; color: #137333; border-color: #e6f4ea; }
+        .section-title { font-size: 18px; font-weight: 500; padding: 20px 16px 8px 16px; color: #fff; }
+
+        /* Home Grid Layout */
+        .app-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 16px; }
+        .app-card { background: transparent; cursor: pointer; }
+        .app-thumbnail { 
+            width: 100%; height: 115px; border-radius: 16px; object-fit: cover; background: #303134; margin-bottom: 6px;
+        }
+        .app-title { font-size: 14px; font-weight: 400; color: #e8eaed; line-height: 1.3; height: 36px; overflow: hidden; }
+        .app-rating { font-size: 12px; color: #9aa0a6; margin-top: 2px; }
+
+        /* DETAILED PAGE MODULE */
+        #details-content { padding: 0; }
+        .details-padding { padding: 20px 16px; }
+        
+        /* PLAYSTORE EMBEDDED VIDEO CONTAINER */
+        .video-container {
+            position: relative; width: 100%; padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0; overflow: hidden; background: #000;
+        }
+        .video-container iframe {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;
+        }
+
+        .main-info-block { display: flex; gap: 16px; margin-bottom: 24px; margin-top: 12px; }
+        .details-icon { width: 90px; height: 90px; border-radius: 22px; object-fit: cover; background: #303134; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .details-text-side { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .details-title { font-size: 22px; font-weight: 500; color: #fff; margin-bottom: 4px; }
+        .details-dev { color: #00a173; font-size: 14px; font-weight: 500; }
+        
+        .play-stats-row { 
+            display: flex; justify-content: space-around; border-top: 1px solid #303134; 
+            border-bottom: 1px solid #303134; padding: 12px 0; margin-bottom: 24px; text-align: center;
+        }
+        .stat-item { flex: 1; border-right: 1px solid #303134; }
+        .stat-item:last-child { border-right: none; }
+        .stat-val { font-size: 14px; font-weight: bold; color: #fff; }
+        .stat-lbl { font-size: 11px; color: #9aa0a6; margin-top: 2px; }
+
+        .details-btn-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+        .btn-main-install { background: #00a173; color: #fff; border: none; padding: 14px; font-size: 15px; font-weight: 500; border-radius: 100px; cursor: pointer; text-align: center; width: 100%; box-sizing: border-box; }
+        .btn-sec-obb { background: #303134; color: #8ab4f8; border: none; padding: 14px; font-size: 15px; font-weight: 500; border-radius: 100px; cursor: pointer; text-align: center; width: 100%; box-sizing: border-box; }
+        
+        .description-box { margin-bottom: 24px; }
+        .desc-title { font-size: 16px; font-weight: 500; color: #fff; margin-bottom: 8px; }
+        .desc-body { font-size: 14px; color: #9aa0a6; line-height: 1.5; }
+        
+        .password-banner { background: rgba(241, 139, 139, 0.1); border-left: 4px solid #ea4335; padding: 12px; border-radius: 4px; margin-bottom: 20px; font-size: 13px; color: #ff8a80; font-family: monospace; }
+        
+        /* MODERN COMMENT SYSTEM STYLES */
+        .comment-section { border-top: 1px solid #303134; padding-top: 20px; margin-top: 20px; }
+        .comment-box-header { font-size: 16px; font-weight: 500; color: #fff; margin-bottom: 16px; }
+        .comment-input-row { display: flex; gap: 12px; margin-bottom: 20px; align-items: flex-start; }
+        .user-comment-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: #444; }
+        .comment-field-wrapper { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        .comment-field-wrapper textarea {
+            width: 100%; background: transparent; border: none; border-bottom: 1px solid #5f6368;
+            color: #fff; font-size: 14px; font-family: inherit; outline: none; resize: none; padding-bottom: 4px;
+        }
+        .comment-field-wrapper textarea:focus { border-bottom-color: #00a173; }
+        .btn-comment-submit {
+            align-self: flex-end; background: #00a173; color: #fff; border: none;
+            padding: 6px 16px; border-radius: 100px; font-size: 13px; font-weight: 500; cursor: pointer;
+        }
+        .comments-list { display: flex; flex-direction: column; gap: 16px; }
+        .single-comment { display: flex; gap: 12px; background: rgba(255,255,255,0.02); padding: 10px; border-radius: 12px; }
+        .comment-meta { display: flex; flex-direction: column; flex: 1; }
+        .comment-author-name { font-size: 13px; font-weight: 500; color: #fff; margin-bottom: 2px; }
+        .comment-text { font-size: 13px; color: #bdc1c6; line-height: 1.4; }
+
+        /* PROFILE INTERFACE LAYER */
+        #profile-view-layer { padding: 24px 16px; text-align: center; }
+        .profile-setup-avatar {
+            width: 110px; height: 110px; border-radius: 50%; object-fit: cover;
+            background: #303134; border: 3px solid #00a173; margin: 0 auto 12px auto; display: block;
+        }
+        .upload-trigger-btn {
+            background: #303134; color: #8ab4f8; font-size: 13px; padding: 6px 14px;
+            border-radius: 100px; display: inline-block; cursor: pointer; margin-bottom: 30px; border: 1px solid #5f6368;
+        }
+        .profile-save-btn {
+            background: #00a173; color: #fff; width: 100%; max-width: 260px; padding: 12px;
+            border: none; border-radius: 100px; font-size: 15px; font-weight: 500; cursor: pointer; margin-top: 20px;
+        }
+        .danger-logout-btn {
+            background: transparent; color: #ea4335; font-size: 13px; border: 1px solid #ea4335;
+            padding: 8px 16px; border-radius: 100px; cursor: pointer; display: inline-block; margin-top: 40px;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Screen -->
+    <div id="loading-overlay" class="active">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- LOGIN & SIGN UP SYSTEM -->
+    <div id="auth-container" class="hidden">
+        <!-- LOGIN VIEW -->
+        <div class="auth-box" id="login-box">
+            <div class="play-logo-icon">
+                <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none">
+                    <path d="M3.52 2.12C3.18 2.48 3 3.03 3 3.74v16.51c0 .71.18 1.26.52 1.62l.09.09L13.1 12.44v-.17L3.61 2.03l-.09.09z" fill="#EA4335"/>
+                    <path d="M16.29 15.62l-3.19-3.18v-.17l3.19-3.18.1.06 3.77 2.14c1.08.61 1.08 1.62 0 2.24l-3.77 2.14-.1-.05z" fill="#FBBC05"/>
+                    <path d="M16.39 15.56L13.1 12.27 3.61 21.76c.35.37.94.42 1.61.04l11.17-6.24z" fill="#4285F4"/>
+                    <path d="M16.39 8.99L5.22 2.75C4.55 2.37 3.96 2.42 3.61 2.79L13.1 12.27l3.29-3.28z" fill="#34A853"/>
+                </svg>
+            </div>
+            <div class="auth-title">Sign in</div>
+            <div class="auth-subtitle">to continue to LokoStore</div>
+            <div class="input-group"><input type="text" id="login-user" placeholder="Username"></div>
+            <div class="input-group"><input type="password" id="login-pass" placeholder="Enter password"></div>
+            <button class="btn-auth" onclick="handleLogin()">Next</button>
+            <div class="auth-toggle" onclick="toggleAuthPanel('signup')">Create account</div>
+        </div>
+
+        <!-- SIGN UP VIEW -->
+        <div class="auth-box hidden" id="signup-box">
+            <div class="play-logo-icon">
+                <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none">
+                    <path d="M3.52 2.12C3.18 2.48 3 3.03 3 3.74v16.51c0 .71.18 1.26.52 1.62l.09.09L13.1 12.44v-.17L3.61 2.03l-.09.09z" fill="#EA4335"/>
+                    <path d="M16.29 15.62l-3.19-3.18v-.17l3.19-3.18.1.06 3.77 2.14c1.08.61 1.08 1.62 0 2.24l-3.77 2.14-.1-.05z" fill="#FBBC05"/>
+                    <path d="M16.39 15.56L13.1 12.27 3.61 21.76c.35.37.94.42 1.61.04l11.17-6.24z" fill="#4285F4"/>
+                    <path d="M16.39 8.99L5.22 2.75C4.55 2.37 3.96 2.42 3.61 2.79L13.1 12.27l3.29-3.28z" fill="#34A853"/>
+                </svg>
+            </div>
+            <div class="auth-title">Create account</div>
+            <div class="auth-subtitle">Get access to unlimited game mods</div>
+            <div class="input-group"><input type="text" id="reg-user" placeholder="Choose a username"></div>
+            <div class="input-group"><input type="password" id="reg-pass" placeholder="Create a password"></div>
+            <button class="btn-auth" onclick="handleSignUp()">Create</button>
+            <div class="auth-toggle" onclick="toggleAuthPanel('login')">Sign in instead</div>
+        </div>
+    </div>
+
+    <!-- MAIN INTERFACE MAIN BODY -->
+    <div id="main-content" class="hidden">
+        <!-- PlayStore Header & Navigation -->
+        <div class="store-header">
+            <button class="back-btn" id="header-back-arrow" onclick="goBackRouter()">⬅</button>
+            
+            <div class="search-bar-wrapper" id="search-box-container">
+                <span style="color:#9aa0a6; font-size: 18px;">🔍</span>
+                <input type="text" id="search-input" placeholder="Search for apps & games" onkeyup="filterApps()">
+            </div>
+            
+            <div id="page-title-label" style="font-size: 18px; font-weight: 500; display: none; flex: 1;">App details</div>
+            <img class="header-avatar" id="trigger-profile-img" src="https://www.w3schools.com/howto/img_avatar.png" onclick="openProfilePage()">
+        </div>
+
+        <!-- HOME PAGE LAYER -->
+        <div id="home-view-layer">
+            <div class="category-slider">
+                <div class="chip active" onclick="filterCategory('all', this)">All</div>
+                <div class="chip" onclick="filterCategory('games', this)">Games</div>
+                <div class="chip" onclick="filterCategory('mods', this)">Rosters & Imports</div>
+            </div>
+            <div class="section-title">Suggested for you</div>
+            <div class="app-grid" id="apps-container">
+                <!-- Card 1 -->
+                <div class="app-card" data-id="1" data-title="nba 2k16 to 2k26 mobile" data-category="games" onclick="openDetailsPage(1)">
+                    <img class="app-thumbnail" src="https://i.ibb.co/DfcbJ8Yj/image.png">
+                    <div class="app-title">NBA 2K16 to 2K26</div>
+                    <div class="app-rating">4.8★ • 52 MB</div>
+                </div>
+                <!-- Card 2 -->
+                <div class="app-card" data-id="2" data-title="pba2k mobile sports basketball" data-category="games" onclick="openDetailsPage(2)">
+                    <img class="app-thumbnail" src="https://i.ibb.co/bgcCZxqb/image.png">
+                    <div class="app-title">PBA2K Mobile</div>
+                    <div class="app-rating">4.7★ • 45 MB</div>
+                </div>
+                <!-- Card 3 -->
+                <div class="app-card" data-id="3" data-title="inter barangay s1 nba 2k16 version" data-category="mods" onclick="openDetailsPage(3)">
+                    <img class="app-thumbnail" src="https://i.ibb.co/DHWfzvkB/image.png">
+                    <div class="app-title">Inter Barangay S1 (2K16)</div>
+                    <div class="app-rating">4.9★ • 120 MB</div>
+                </div>
+                <!-- Card 4 -->
+                <div class="app-card" data-id="4" data-title="inter barangay s1 nba 2k20 version" data-category="mods" onclick="openDetailsPage(4)">
+                    <img class="app-thumbnail" src="https://i.ibb.co/HpbcpFtj/image.png">
+                    <div class="app-title">Inter Barangay S1 (2K20)</div>
+                    <div class="app-rating">4.6★ • 2.1 GB</div>
+                </div>
+                <!-- Card 5 -->
+                <div class="app-card" data-id="5" data-title="pba2k26 updated import roster" data-category="mods" onclick="openDetailsPage(5)">
+                    <img class="app-thumbnail" src="https://i.ibb.co/mCmhD8Pm/image.png">
+                    <div class="app-title">PBA2K26 Updated Import</div>
+                    <div class="app-rating">4.5★ • 88 MB</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DETAILS SCREEN LAYER -->
+        <div id="details-content" class="hidden">
+            <!-- PlayStore Video Header Player -->
+            <div class="video-container">
+                <iframe id="target-youtube-iframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+
+            <div class="details-padding">
+                <div class="main-info-block">
+                    <img class="details-icon" id="target-icon" src="">
+                    <div class="details-text-side">
+                        <div class="details-title" id="target-title">Game Title</div>
+                        <div class="details-dev">Loko2K Official Mods</div>
+                    </div>
+                </div>
+
+                <div class="play-stats-row">
+                    <div class="stat-item">
+                        <div class="stat-val" id="target-stars">4.8★</div>
+                        <div class="stat-lbl">Reviews</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-val">50K+</div>
+                        <div class="stat-lbl">Downloads</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-val" id="target-size">Size</div>
+                        <div class="stat-lbl">Size</div>
+                    </div>
+                </div>
+
+                <div class="password-banner" id="target-pw">🔑 PASSWORD: NONE</div>
+
+                <div class="details-btn-group">
+                    <button id="target-btn-apk" class="btn-main-install">Install APK</button>
+                    <button id="target-btn-obb" class="btn-sec-obb">Download OBB Data</button>
+                </div>
+
+                <div class="description-box">
+                    <div class="desc-title">About this game</div>
+                    <div class="desc-body" id="target-desc">Game descriptions loaded here...</div>
+                </div>
+
+                <!-- COMMENT INTERFACE MODULE -->
+                <div class="comment-section">
+                    <div class="comment-box-header">Ratings and reviews</div>
+                    <div class="comment-input-row">
+                        <img class="user-comment-avatar active-user-pfp" src="https://www.w3schools.com/howto/img_avatar.png">
+                        <div class="comment-field-wrapper">
+                            <textarea id="comment-text-input" rows="2" placeholder="Describe your experience..."></textarea>
+                            <button class="btn-comment-submit" onclick="submitComment()">Post</button>
+                        </div>
+                    </div>
+                    <!-- Target Container for user logs -->
+                    <div class="comments-list" id="comments-render-target"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- EDIT PROFILE LAYER -->
+        <div id="profile-view-layer" class="hidden">
+            <img class="profile-setup-avatar active-user-pfp" id="profile-edit-preview" src="https://www.w3schools.com/howto/img_avatar.png">
+            
+            <label for="pfp-file-uploader" class="upload-trigger-btn">Change Profile Picture</label>
+            <input type="file" id="pfp-file-uploader" accept="image/*" style="display: none;" onchange="previewAndCacheImage(this)">
+
+            <div class="input-group" style="max-width: 280px; margin: 0 auto 20px auto;">
+                <input type="text" id="edit-profile-username" placeholder="Edit Username" style="border: 1px solid #5f6368; background: #1e1e1e;">
+            </div>
+
+            <button class="profile-save-btn" onclick="saveProfileChanges()">Save Profile</button>
+            <br>
+            <button class="danger-logout-btn" onclick="handleLogout()">Log out Account</button>
+        </div>
+    </div>
+
+    <script>
+        // Database simulation of app items with integrated video hooks
+        const appDatabase = {
+            1: {
+                title: "NBA 2K16 to 2K26",
+                img: "https://i.ibb.co/DfcbJ8Yj/image.png",
+                rating: "4.8★", size: "52 MB", pw: "SEMIUPDATEROSTER2026",
+                apk: "https://www.mediafire.com/file/o9v93av7hqcerqz/%25F0%259D%2599%25BD%25F0%259D%2599%25B1%25F0%259D%2599%25B02%25F0%259D%2599%25BA26_%25F0%259D%259A%25852_semi_update.zip/file",
+                obb: "https://www.mediafire.com/download/ep3y6u3ukvabsj7",
+                videoEmbed: "https://www.youtube.com/embed/uqsuOtlGGhQ",
+                desc: "The massive roster transition modification project bringing full 2026 season aesthetics, courts, jerseys, and attribute tunings onto the ultra-fluid 2K16 mobile base engine."
+            },
+            2: {
+                title: "PBA2K Mobile",
+                img: "https://i.ibb.co/bgcCZxqb/image.png",
+                rating: "4.7★", size: "45 MB", pw: "PBA2K26",
+                apk: "https://www.mediafire.com/file/w53cu9fbd4re5wp/PBA2K.zip/file",
+                obb: "https://www.mediafire.com/download/ep3y6u3ukvabsj7",
+                videoEmbed: "https://www.youtube.com/embed/j-Ih2gNVTbI",
+                desc: "Play with your favorite local Philippine Basketball Association teams! Featuring updated Governors Cup and Philippine Cup conferences, live stadium announcers, and realistic local pinoy player faces."
+            },
+            3: {
+                title: "Inter Barangay S1 (2K16)",
+                img: "https://i.ibb.co/DHWfzvkB/image.png",
+                rating: "4.9★", size: "120 MB", pw: "NO PASSWORD",
+                apk: "https://www.mediafire.com/file/sfwec64hp2fzokj/INTER_BARANGAY_S1_NO_PASSWORD.zip/file",
+                obb: "https://www.mediafire.com/download/ep3y6u3ukvabsj7",
+                videoEmbed: "https://www.youtube.com/embed/EhvifJV3SdI",
+                desc: "Ang pinakahihintay na street basketball mod. Makipagbakbakan sa sementadong outdoor liga courts kasama ang mga sikat na local pure-street icons, custom uniform jerseys, at maingay na silya at ligang-labas crowd atmosphere."
+            },
+            4: {
+                title: "Inter Barangay S1 (2K20)",
+                img: "https://i.ibb.co/HpbcpFtj/image.png",
+                rating: "4.6★", size: "2.1 GB", pw: "ROADTO4KSUBS",
+                apk: "https://www.mediafire.com/file/ut0ue6o4blde4j7/INTER_BARANGAY.zip/file",
+                obb: "https://www.mediafire.com/file/lry7nfl00i2fc1f/com.t2ksports.nba2k20and.zip/file?fbclid=Iwb21leAR_yJJjbGNrAVhgyGV4dG4DYWVtAjExAAEdSVJBNqALRJ3p3C4ridVZnRPg0mpJF4bqY_PHNd5QtUqRjDi9ArpBCZrU_aem_V94ZHgtWIE62j9hN-4C5Bg",
+                videoEmbed: "https://www.youtube.com/embed/QiZfHzYQ2fM",
+                desc: "Advanced next-generation graphics mod built over the definitive 2K20 mobile platform. Immersive game presentation with complete custom soundpacks, high-definition pinoy hoop courts, and refined custom animations."
+            },
+            5: {
+                title: "PBA2K26 Updated Import",
+                img: "https://i.ibb.co/mCmhD8Pm/image.png",
+                rating: "4.5★", size: "88 MB", pw: "LOKO2K",
+                apk: "https://www.mediafire.com/file/ot5js9l4u16xrj7/PBA2K26.zip/file",
+                obb: "https://www.mediafire.com/download/ep3y6u3ukvabsj7",
+                videoEmbed: "https://www.youtube.com/embed/6aSwT7D1Rv4",
+                desc: "An exclusive add-on custom patch dataset delivering newly acquired foreign reinforcements, fresh import players, revised trade transfers, and fine-tuned accuracy ratings for the modern tactical setup."
+            }
+        };
+
+        let currentActiveAppId = null;
+        let base64ImageCache = "https://www.w3schools.com/howto/img_avatar.png";
+
+        // APP STARTUP LIFECYCLE HANDLER
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedUser = localStorage.getItem('loko_user');
+            const savedStatus = localStorage.getItem('loko_isLoggedIn');
+
+            if (!localStorage.getItem('loko_saved_db_user')) {
+                localStorage.setItem('loko_saved_db_user', 'admin');
+                localStorage.setItem('loko_saved_db_pass', '1234');
+            }
+
+            updateProfileDOM();
+
+            setTimeout(() => {
+                if (savedStatus === 'true' && savedUser) {
+                    bypassToStore();
+                } else {
+                    document.getElementById('loading-overlay').classList.remove('active');
+                    document.getElementById('auth-container').classList.remove('hidden');
+                }
+            }, 1000);
+        });
+
+        function bypassToStore() {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+            document.getElementById('loading-overlay').classList.remove('active');
+        }
+
+        function updateProfileDOM() {
+            const currentName = localStorage.getItem('loko_user') || "Guest User";
+            const savedPfp = localStorage.getItem('loko_user_pfp');
+            
+            if(savedPfp) { base64ImageCache = savedPfp; }
+            
+            const pfpElements = document.getElementsByClassName('active-user-pfp');
+            for(let imgNode of pfpElements) { imgNode.src = base64ImageCache; }
+            document.getElementById('trigger-profile-img').src = base64ImageCache;
+            document.getElementById('edit-profile-username').value = currentName;
+        }
+
+        // DETAILED COMPONENT LAYERING ROUTER
+        function openDetailsPage(appId) {
+            showLoader();
+            currentActiveAppId = appId;
+            const item = appDatabase[appId];
+            
+            // YouTube IFrame Source Injection
+            document.getElementById('target-youtube-iframe').src = item.videoEmbed;
+            
+            document.getElementById('target-icon').src = item.img;
+            document.getElementById('target-title').innerText = item.title;
+            document.getElementById('target-stars').innerText = item.rating;
+            document.getElementById('target-size').innerText = item.size;
+            document.getElementById('target-pw').innerText = "🔑 PASSWORD: " + item.pw;
+            document.getElementById('target-desc').innerText = item.desc;
+            
+            document.getElementById('target-btn-apk').setAttribute('onclick', `triggerDownload('${item.apk}')`);
+            document.getElementById('target-btn-obb').setAttribute('onclick', `triggerDownload('${item.obb}')`);
+
+            document.getElementById('home-view-layer').classList.add('hidden');
+            document.getElementById('profile-view-layer').classList.add('hidden');
+            document.getElementById('search-box-container').classList.add('hidden');
+            document.getElementById('trigger-profile-img').classList.add('hidden');
+            
+            document.getElementById('header-back-arrow').style.display = "block";
+            document.getElementById('page-title-label').style.display = "block";
+            document.getElementById('page-title-label').innerText = "App details";
+            document.getElementById('details-content').classList.remove('hidden');
+            
+            renderCommentsForApp(appId);
+            window.scrollTo(0,0);
+        }
+
+        function openProfilePage() {
+            showLoader();
+            document.getElementById('home-view-layer').classList.add('hidden');
+            document.getElementById('details-content').classList.add('hidden');
+            document.getElementById('search-box-container').classList.add('hidden');
+            document.getElementById('trigger-profile-img').classList.add('hidden');
+
+            document.getElementById('header-back-arrow').style.display = "block";
+            document.getElementById('page-title-label').style.display = "block";
+            document.getElementById('page-title-label').innerText = "Edit Profile";
+            document.getElementById('profile-view-layer').classList.remove('hidden');
+        }
+
+        function goBackRouter() {
+            // Unload standard YouTube source paths to forcefully freeze audio/video components
+            document.getElementById('target-youtube-iframe').src = "";
+
+            document.getElementById('details-content').classList.add('hidden');
+            document.getElementById('profile-view-layer').classList.add('hidden');
+            
+            document.getElementById('header-back-arrow').style.display = "none";
+            document.getElementById('page-title-label').style.display = "none";
+
+            document.getElementById('home-view-layer').classList.remove('hidden');
+            document.getElementById('search-box-container').classList.remove('hidden');
+            document.getElementById('trigger-profile-img').classList.remove('hidden');
+            currentActiveAppId = null;
+        }
+
+        function previewAndCacheImage(inputNode) {
+            const file = inputNode.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const resultBase64 = e.target.result;
+                    document.getElementById('profile-edit-preview').src = resultBase64;
+                    base64ImageCache = resultBase64;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveProfileChanges() {
+            const updatedName = document.getElementById('edit-profile-username').value.trim();
+            if(updatedName === "") { alert("Username cannot be empty."); return; }
+
+            showLoader();
+            localStorage.setItem('loko_user', updatedName);
+            localStorage.setItem('loko_saved_db_user', updatedName);
+            localStorage.setItem('loko_user_pfp', base64ImageCache);
+
+            setTimeout(() => {
+                updateProfileDOM();
+                alert("Profile changes saved!");
+                goBackRouter();
+            }, 600);
+        }
+
+        function renderCommentsForApp(appId) {
+            const targetContainer = document.getElementById('comments-render-target');
+            targetContainer.innerHTML = "";
+
+            const globalCommentsObject = JSON.parse(localStorage.getItem('loko_comments_master')) || {};
+            const appComments = globalCommentsObject[appId] || [];
+
+            if(appComments.length === 0) {
+                targetContainer.innerHTML = `<div style="font-size: 13px; color:#70757a; text-align:center; padding:10px 0;">No reviews yet. Be the first to post!</div>`;
+                return;
+            }
+
+            appComments.forEach(comment => {
+                const element = document.createElement('div');
+                element.className = "single-comment";
+                element.innerHTML = `
+                    <img class="user-comment-avatar" src="${comment.userPfp}">
+                    <div class="comment-meta">
+                        <div class="comment-author-name">${comment.author}</div>
+                        <div class="comment-text">${comment.text}</div>
+                    </div>
+                `;
+                targetContainer.appendChild(element);
+            });
+        }
+
+        function submitComment() {
+            const inputField = document.getElementById('comment-text-input');
+            const commentString = inputField.value.trim();
+            if(commentString === "") return;
+
+            const currentUser = localStorage.getItem('loko_user') || "Anonymous";
+            const currentPfp = localStorage.getItem('loko_user_pfp') || "https://www.w3schools.com/howto/img_avatar.png";
+
+            const newCommentObject = {
+                author: currentUser,
+                userPfp: currentPfp,
+                text: commentString
+            };
+
+            const masterComments = JSON.parse(localStorage.getItem('loko_comments_master')) || {};
+            if(!masterComments[currentActiveAppId]) { masterComments[currentActiveAppId] = []; }
+            
+            masterComments[currentActiveAppId].push(newCommentObject);
+            localStorage.setItem('loko_comments_master', JSON.stringify(masterComments));
+
+            inputField.value = "";
+            renderCommentsForApp(currentActiveAppId);
+        }
+
+        function toggleAuthPanel(panel) {
+            if(panel === 'signup') {
+                document.getElementById('login-box').classList.add('hidden');
+                document.getElementById('signup-box').classList.remove('hidden');
+            } else {
+                document.getElementById('signup-box').classList.add('hidden');
+                document.getElementById('login-box').classList.remove('hidden');
+            }
+        }
+
+        function handleSignUp() {
+            const u = document.getElementById('reg-user').value.trim();
+            const p = document.getElementById('reg-pass').value.trim();
+            if(u === "" || p === "") { alert("Please fill in all fields."); return; }
+            localStorage.setItem('loko_saved_db_user', u);
+            localStorage.setItem('loko_saved_db_pass', p);
+            showLoader();
+            setTimeout(() => { alert("Account created successfully!"); toggleAuthPanel('login'); }, 800);
+        }
+
+        function handleLogin() {
+            const u = document.getElementById('login-user').value.trim();
+            const p = document.getElementById('login-pass').value.trim();
+            const registeredUser = localStorage.getItem('loko_saved_db_user');
+            const registeredPass = localStorage.getItem('loko_saved_db_pass');
+
+            if(u === registeredUser && p === registeredPass) {
+                localStorage.setItem('loko_user', u);
+                localStorage.setItem('loko_isLoggedIn', 'true');
+                updateProfileDOM();
+                showLoader();
+                setTimeout(() => { bypassToStore(); }, 1000);
+            } else { alert("Wrong credentials."); }
+        }
+
+        function handleLogout() {
+            if(confirm("Log out from LokoStore?")) {
+                localStorage.removeItem('loko_user');
+                localStorage.removeItem('loko_isLoggedIn');
+                localStorage.removeItem('loko_user_pfp');
+                base64ImageCache = "https://www.w3schools.com/howto/img_avatar.png";
+                updateProfileDOM();
+                showLoader();
+                setTimeout(() => {
+                    document.getElementById('main-content').classList.add('hidden');
+                    document.getElementById('auth-container').classList.remove('hidden');
+                }, 800);
+            }
+        }
+
+        function filterApps() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const cards = document.getElementsByClassName('app-card');
+            for(let card of cards) {
+                const title = card.getAttribute('data-title');
+                card.style.display = title.includes(query) ? "" : "none";
+            }
+        }
+
+        function filterCategory(cat, element) {
+            const chips = document.getElementsByClassName('chip');
+            for(let c of chips) { c.classList.remove('active'); }
+            element.classList.add('active');
+            const cards = document.getElementsByClassName('app-card');
+            for(let card of cards) {
+                const itemCat = card.getAttribute('data-category');
+                card.style.display = (cat === 'all' || itemCat === cat) ? "" : "none";
+            }
+        }
+
+        function showLoader() {
+            const overlay = document.getElementById('loading-overlay');
+            overlay.classList.add('active');
+            setTimeout(() => { overlay.classList.remove('active'); }, 800);
+        }
+
+        function triggerDownload(url) {
+            const overlay = document.getElementById('loading-overlay');
+            overlay.classList.add('active');
+            window.location.href = url;
+            setTimeout(() => { overlay.classList.remove('active'); }, 2000);
+        }
+    </script>
+</body>
+</html>
