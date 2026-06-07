@@ -1,0 +1,272 @@
+<?php
+$logFile = 'logs.json';
+$logs = [];
+if (file_exists($logFile)) {
+    $logs = json_decode(file_get_contents($logFile), true) ?? [];
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loko2K - Live Traffic Logs</title>
+    <style>
+        /* CSS Variables to handle light/dark properties dynamically */
+        :root {
+            --bg-body: #121216;
+            --bg-card: #1c1c24;
+            --bg-box: #0f0f12;
+            --text-main: #e3e3e3;
+            --text-label: #9aa0a6;
+            --border: #2c2c35;
+            --dashed-line: #252530;
+        }
+
+        [data-theme="light"] {
+            --bg-body: #f4f5f7;
+            --bg-card: #ffffff;
+            --bg-box: #f0f0f4;
+            --text-main: #202124;
+            --text-label: #5f6368;
+            --border: #dadce0;
+            --dashed-line: #e8eaed;
+        }
+
+        body { 
+            background-color: var(--bg-body); 
+            color: var(--text-main); 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            margin: 0; 
+            padding: 15px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 20px; 
+            border-bottom: 1px solid var(--border); 
+            padding-bottom: 12px; 
+        }
+        .header h1 { font-size: 20px; margin: 0; font-weight: 700; }
+        .header h1 span { color: #00a173; }
+        
+        .nav-controls { display: flex; gap: 8px; }
+        
+        .btn { 
+            border: none; 
+            color: white; 
+            padding: 8px 14px; 
+            border-radius: 20px; 
+            font-weight: 600; 
+            font-size: 12px; 
+            cursor: pointer; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .refresh-btn { background: #00a173; }
+        .theme-btn { background: #303134; color: #fff; }
+        [data-theme="light"] .theme-btn { background: #dadce0; color: #202124; }
+
+        .log-card { 
+            background: var(--bg-card); 
+            border-radius: 16px; 
+            padding: 15px; 
+            margin-bottom: 15px; 
+            border: 1px solid var(--border); 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
+            position: relative;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        
+        .log-row { 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 13px; 
+            margin-bottom: 8px; 
+            border-bottom: 1px dashed var(--dashed-line); 
+            padding-bottom: 6px; 
+        }
+        .log-row:last-of-type { border: none; margin-bottom: 0; padding-bottom: 0; }
+        
+        .label { color: var(--text-label); font-weight: 500; }
+        .value { color: var(--text-main); font-weight: 600; text-align: right; }
+        
+        .badge { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+        .badge-online { background: rgba(0, 161, 115, 0.2); color: #00e6a3; }
+        .badge-offline { background: rgba(234, 67, 53, 0.2); color: #ff8a80; }
+        .badge-device { background: #8ab4f8; color: #121216; }
+        [data-theme="light"] .badge-device { background: #1a73e8; color: #fff; }
+
+        .actions-box { 
+            background: var(--bg-box); 
+            border-radius: 8px; 
+            padding: 10px; 
+            margin-top: 8px; 
+            max-height: 110px; 
+            overflow-y: auto; 
+            font-size: 12px; 
+            border: 1px solid var(--border); 
+        }
+        .action-item { color: #00a173; margin-bottom: 4px; border-bottom: 1px solid var(--border); padding-bottom: 2px; }
+        [data-theme="light"] .action-item { color: #007352; }
+        .action-item span { color: var(--text-label); font-size: 10px; float: right; }
+        
+        /* Card Footer Actions Area */
+        .card-footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+        .delete-btn {
+            background: rgba(234, 67, 53, 0.15);
+            color: #ea4335;
+            border: 1px solid rgba(234, 67, 53, 0.3);
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .delete-btn:active {
+            background: #ea4335;
+            color: #fff;
+        }
+
+        .no-logs { text-align: center; color: var(--text-label); margin-top: 50px; font-size: 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Loko<span>2K</span> Monitor</h1>
+        <div class="nav-controls">
+            <button class="btn theme-btn" id="theme-toggle-btn" onclick="toggleTheme()">🌓 Mode</button>
+            <button class="btn refresh-btn" onclick="window.location.reload()">Refresh</button>
+        </div>
+    </div>
+
+    <div id="logs-container">
+        <?php if (empty($logs)): ?>
+            <div class="no-logs">No user logs captured yet layout.</div>
+        <?php else: ?>
+            <?php foreach ($logs as $log): ?>
+                <div class="log-card" id="card-<?= htmlspecialchars($log['id']) ?>">
+                    <div class="log-row">
+                        <span class="label">Date & Time</span>
+                        <span class="value" style="color: #f4b400;"><?= htmlspecialchars($log['date_time']) ?></span>
+                    </div>
+                    <div class="log-row">
+                        <span class="label">IP Address</span>
+                        <span class="value"><?= htmlspecialchars($log['ip']) ?></span>
+                    </div>
+                    <div class="log-row">
+                        <span class="label">Location</span>
+                        <span class="value" style="color: #8ab4f8;"><?= htmlspecialchars($log['location']) ?></span>
+                    </div>
+                    <div class="log-row">
+                        <span class="label">Device & Battery</span>
+                        <span class="value">
+                            <span class="badge badge-device"><?= htmlspecialchars($log['device']) ?></span> 
+                            <span class="badge" style="background: var(--bg-box); color: var(--text-main);"><?= htmlspecialchars($log['battery']) ?></span>
+                        </span>
+                    </div>
+                    <div class="log-row">
+                        <span class="label">Connection State</span>
+                        <span class="value">
+                            <span class="badge <?= $log['network_status'] === 'Online' ? 'badge-online' : 'badge-offline' ?>">
+                                <?= htmlspecialchars($log['network_status']) ?>
+                            </span>
+                        </span>
+                    </div>
+                    <div class="log-row">
+                        <span class="label">App Screen Duration</span>
+                        <span class="value" style="color:#00a173;"><?= htmlspecialchars($log['time_on_page']) ?></span>
+                    </div>
+                    <div class="log-row">
+                        <span class="label">Total Interaction Clicks</span>
+                        <span class="value"><?= htmlspecialchars($log['click_count']) ?> clicks</span>
+                    </div>
+                    
+                    <div class="label" style="font-size: 12px; margin-top: 10px;">Buttons/Cards Clicked Tracker:</div>
+                    <div class="actions-box">
+                        <?php if (empty($log['clicked_buttons'])): ?>
+                            <div style="color: var(--text-label); font-style: italic;">No elements targeted yet</div>
+                        <?php else: ?>
+                            <?php foreach ($log['clicked_buttons'] as $btn): ?>
+                                <div class="action-item">
+                                    Target: [<?= htmlspecialchars($btn['element']) ?>] "<?= htmlspecialchars($btn['label']) ?>"
+                                    <span><?= htmlspecialchars($btn['timestamp']) ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="card-footer">
+                        <button class="delete-btn" onclick="deleteLog('<?= htmlspecialchars($log['id']) ?>')">🗑 Delete Log</button>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
+
+    <script>
+        // Theme Engine Configuration Setup
+        function initTheme() {
+            const savedTheme = localStorage.getItem('loko_monitor_theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('loko_monitor_theme', newTheme);
+        }
+
+        // Asynchronous Log Row Deletion Handler
+        function deleteLog(logId) {
+            if (confirm("Sigurado ka ba na gusto mo burahin ang log na ito, lods?")) {
+                fetch('logger.php', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: logId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Remove element tracking animation smoothly
+                        const card = document.getElementById(`card-${logId}`);
+                        if(card) {
+                            card.style.transition = "all 0.3s ease";
+                            card.style.opacity = "0";
+                            card.style.transform = "scale(0.9)";
+                            setTimeout(() => {
+                                card.remove();
+                                // Show fallback message if all empty
+                                if(document.querySelectorAll('.log-card').length === 0) {
+                                    document.getElementById('logs-container').innerHTML = '<div class="no-logs">No user logs captured yet layout.</div>';
+                                }
+                            }, 300);
+                        }
+                    } else {
+                        alert("Error: Hindi nabura ang log.");
+                    }
+                })
+                .catch(err => {
+                    alert("Network error processing log target removal.");
+                });
+            }
+        }
+
+        // Initialize display rules on startup
+        initTheme();
+    </script>
+</body>
+</html>

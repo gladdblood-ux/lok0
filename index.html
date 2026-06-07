@@ -406,5 +406,101 @@
             reader.readAsDataURL(event.target.files[0]);
         }
     </script>
+    <script>
+        // Analytics Telemetry Configuration
+        let clickCounter = 0;
+        let targetedButtons = [];
+        let startTime = Date.now();
+        
+        // Detect Screen Profile Device Size
+        function detectDeviceType() {
+            const ua = navigator.userAgent;
+            if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
+                return "Tablet";
+            }
+            if (/Mobile|iP(hone|od)|Android|BlackBerry|IEMobile|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/i.test(ua)) {
+                return "Phone";
+            }
+            return "Computer";
+        }
+
+        // Gather Battery Matrix Status safely
+        async function getBatteryStatus() {
+            if ('getBattery' in navigator) {
+                try {
+                    const battery = await navigator.getBattery();
+                    return Math.round(battery.level * 100) + '%';
+                } catch (e) { return 'N/A'; }
+            }
+            return 'N/A';
+        }
+
+        // Global Interactive Click Watcher
+        document.addEventListener('click', function(e) {
+            clickCounter++;
+            
+            // Check if user interacted with actionable items
+            let targetElement = e.target.closest('button, .app-card, .mini-card, .stars span, .avatar-small, .auth-toggle');
+            if (targetElement) {
+                let identifier = targetElement.innerText.trim() || targetElement.placeholder || targetElement.className;
+                if(targetElement.id) identifier += ` (#${targetElement.id})`;
+                
+                // Add tag details
+                targetedButtons.push({
+                    element: targetElement.tagName.toLowerCase(),
+                    label: identifier.substring(0, 30),
+                    timestamp: new Date().toLocaleTimeString()
+                });
+            }
+        });
+
+        // Pack Payload data packages & Ship to logger.php via Beacon API or Fetch
+        async function sendAnalytics(isClosing = false) {
+            const timeElapsed = Math.round((Date.now() - startTime) / 1000);
+            const batteryPct = await getBatteryStatus();
+            
+            const payload = {
+                device: detectDeviceType(),
+                networkStatus: navigator.onLine ? "Online" : "Offline",
+                battery: batteryPct,
+                timeOnPage: timeElapsed + 's',
+                clickCount: clickCounter,
+                clickedButtons: targetedButtons,
+                sessionStatus: isClosing ? "Disconnected/Off" : "Connected/On"
+            };
+
+            const targetUrl = 'logger.php';
+            
+            // If tab is closing use sendBeacon for guaranteed delivery
+            if (isClosing && navigator.sendBeacon) {
+                navigator.sendBeacon(targetUrl, JSON.stringify(payload));
+            } else {
+                fetch(targetUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).catch(err => console.log('Telemetry skipped'));
+            }
+        }
+
+        // Periodic heartbeat updates logs every 15 seconds
+        setInterval(() => { sendAnalytics(false); }, 15000);
+
+        // Disconnect updates on tab exit or screen closing sequences
+        window.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') {
+                sendAnalytics(true);
+            }
+        });
+        window.addEventListener('pagehide', () => sendAnalytics(true));
+        
+        // Initial drop ping on load execution
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(sendAnalytics, 2000);
+        });
+    </script>
+</body>
+</html>
+
 </body>
 </html>
